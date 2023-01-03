@@ -18,6 +18,7 @@ APickupBase::APickupBase()
 	SphereCollision = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere Collision"));
 	RootComponent = SphereCollision;
 	SphereCollision->SetCollisionProfileName("Interactable");
+	SphereCollision->SetSphereRadius(100.f);
 
 	PickupMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Pickup Mesh"));
 	PickupMesh->SetupAttachment(RootComponent);

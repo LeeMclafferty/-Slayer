@@ -5,5 +5,6 @@
 
 AToughSword::AToughSword()
 {
-
+	AttachSocketName = "unequipped_hip_soc";
+	HandSocketName = "weapon_light_soc";
 }
