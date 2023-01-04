@@ -26,13 +26,10 @@ public:
 	UAnimMontage* GetWeaponDrawMontage() { return WeaponDrawMontage; }
 	UFUNCTION(BlueprintPure, Category = "Getter")
 	UAnimMontage* GetWeaponSheathMontage() { return WeaponSheathMontage; }
-	UFUNCTION(BlueprintPure, Category = "Getter")
-	bool IsAttachedToHand() { return bIsAttachedToHand; }
 
 	/* --  Attachment --*/
 	virtual void OnEquip() override;
 	virtual void OnUnequip() override;
-	void SetAttachedToHand(bool NewAttachment);
 
 protected:
 
@@ -42,6 +39,4 @@ private:
 	class UAnimMontage* WeaponDrawMontage;
 	UPROPERTY(EditDefaultsOnly, Category = "Animation")
 	class UAnimMontage* WeaponSheathMontage;
-	
-	bool bIsAttachedToHand;
 };

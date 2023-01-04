@@ -23,13 +23,13 @@ public:
 	void UpdateCombatType_Implementation(ECombatType NewCombatType);
 
 	UFUNCTION(BlueprintNativeEvent, Category = "AnimInterface")
-	void UpdateWeaponAttachedToHand(bool NewAttachment);
-	void UpdateWeaponAttachedToHand_Implementation(bool NewAttachment);
+	void UpdateCombatEnabled(bool NewAttachment);
+	void UpdateCombatEnabled_Implementation(bool NewAttachment);
 
 protected:
 	UPROPERTY(BlueprintReadOnly)
 	ECombatType CurrentCombatType;
 
 	UPROPERTY(BlueprintReadOnly)
-	bool bIsWeaponAttachedToHand;
+	bool bIsCombatEnabled;
 };

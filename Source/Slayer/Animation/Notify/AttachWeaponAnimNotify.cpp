@@ -26,11 +26,11 @@ void UAttachWeaponAnimNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequ
 		FName SocketToUse;
 		if (bShouldAttachToHand)
 		{
-			SocketToUse = Weapon->GetHandSocketName();
+			SocketToUse = Weapon->GetEquippedSocketName();
 		}
 		else
 		{
-			SocketToUse = Weapon->GetAttachSocketName();
+			SocketToUse = Weapon->GetUnequippedSocketName();
 		}
 
 		Weapon->AttachActor(SocketToUse);

@@ -7,7 +7,7 @@
 #include "GameFramework/Character.h"
 
 AEquippableBase::AEquippableBase()
-	:AttachSocketName("unequipped_hip_soc"), HandSocketName("weapon_r_soc"), bIsEquipped(false)
+	:UnequippedSocketName("unequipped_hip_soc"), EquippedSocketName("weapon_r_soc"), bIsEquipped(false)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -50,7 +50,7 @@ void AEquippableBase::OnEquip()
 {
 	bIsEquipped = true;
 
-	AttachActor(AttachSocketName);
+	AttachActor(UnequippedSocketName);
 }
 
 void AEquippableBase::OnUnequip()

@@ -22,10 +22,10 @@ public:
 	bool IsEquipped() { return bIsEquipped; }
 
 	UFUNCTION(BlueprintPure, Category="Getters")
-	FName GetAttachSocketName() { return AttachSocketName; }
+	FName GetUnequippedSocketName() { return UnequippedSocketName; }
 
 	UFUNCTION(BlueprintPure, Category = "Getters")
-	FName GetHandSocketName() { return HandSocketName; }
+	FName GetEquippedSocketName() { return EquippedSocketName; }
 
 	/* --  Attachment --*/
 	virtual void OnEquip();
@@ -43,10 +43,10 @@ protected:
 
 	/* --  Attachment --*/
 	UPROPERTY(EditDefaultsOnly, Category = "Initialization")
-	FName AttachSocketName;
+	FName UnequippedSocketName;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Initialization")
-	FName HandSocketName;
+	FName EquippedSocketName;
 
 private:
 

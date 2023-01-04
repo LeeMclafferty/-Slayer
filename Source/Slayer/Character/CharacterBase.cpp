@@ -6,11 +6,39 @@
 
 #include "Slayer/Interfaces/InteractableInterface.h"
 #include "Slayer/Actors/WeaponBase.h"
+#include "Slayer/Interfaces/AnimInstanceInterface.h"
 
 ACharacterBase::ACharacterBase()
-	:MainWeapon(nullptr), HandSocket("weapon_r_soc"), ToggleCombatAction(nullptr), InteractAction(nullptr)
+	:ToggleCombatAction(nullptr), InteractAction(nullptr), MainWeapon(nullptr),
+	bIsCombatEnabled(false)
 {
-	HandSocket = "weapon_r_soc";
+
+}
+
+void ACharacterBase::SetMainWeapon(AWeaponBase* NewWeapon)
+{
+	if (MainWeapon)
+	{
+		MainWeapon->OnUnequip();
+		MainWeapon->Destroy();
+	}
+
+	MainWeapon = NewWeapon;
+}
+
+void ACharacterBase::SetCombatEnabled(bool NewEnabled)
+{
+	bIsCombatEnabled = NewEnabled;
+
+
+	UAnimInstance* AnimInst = GetMesh()->GetAnimInstance();
+	bool bIsUsingAnimInterface = false;
+	bIsUsingAnimInterface = AnimInst->Implements<UAnimInstanceInterface>();
+
+	if (bIsUsingAnimInterface)
+	{
+		IAnimInstanceInterface::Execute_UpdateCombatEnabled(AnimInst, bIsCombatEnabled);
+	}
 }
 
 void ACharacterBase::BeginPlay()
@@ -37,15 +65,15 @@ void ACharacterBase::ToggleCombat()
 	}
 
 	UAnimMontage* MontageToPlay;
-	if (MainWeapon->IsAttachedToHand())
+	if (IsCombatEnabled())
 	{
 		MontageToPlay = MainWeapon->GetWeaponSheathMontage();
-		MainWeapon->SetAttachedToHand(false);
+		SetCombatEnabled(false);
 	}
 	else
 	{
 		MontageToPlay = MainWeapon->GetWeaponDrawMontage();
-		MainWeapon->SetAttachedToHand(true);
+		SetCombatEnabled(true);
 	}
 	
 	if(MontageToPlay)

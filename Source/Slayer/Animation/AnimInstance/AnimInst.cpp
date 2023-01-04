@@ -4,7 +4,7 @@
 #include "Slayer/Animation/AnimInstance/AnimInst.h"
 
 UAnimInst::UAnimInst()
-	:CurrentCombatType(ECombatType::ECT_None), bIsWeaponAttachedToHand(false)
+	:CurrentCombatType(ECombatType::ECT_None), bIsCombatEnabled(false)
 {
 
 }
@@ -14,8 +14,8 @@ void UAnimInst::UpdateCombatType_Implementation(ECombatType NewCombatType)
 	CurrentCombatType = NewCombatType;
 }
 
-void UAnimInst::UpdateWeaponAttachedToHand_Implementation(bool NewAttachment)
+void UAnimInst::UpdateCombatEnabled_Implementation(bool NewAttachment)
 {
-	bIsWeaponAttachedToHand = NewAttachment;
+	bIsCombatEnabled = NewAttachment;
 }
 

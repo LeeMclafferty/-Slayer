@@ -28,6 +28,6 @@ public:
 	void UpdateCombatType(ECombatType NewCombatType);
 
 	UFUNCTION(BlueprintNativeEvent, Category = "AnimInterface")
-	void UpdateWeaponAttachedToHand(bool NewAttachment);
+	void UpdateCombatEnabled(bool NewAttachment);
 	
 };

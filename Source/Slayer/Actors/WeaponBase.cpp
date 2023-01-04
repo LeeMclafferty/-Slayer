@@ -9,14 +9,14 @@
 AWeaponBase::AWeaponBase()
 	: CombatType(ECombatType::ECT_None), WeaponDrawMontage(nullptr), WeaponSheathMontage(nullptr)
 {
-	AttachSocketName = "unequipped_hip_soc";
-	HandSocketName = "weapon_r_soc";
+	UnequippedSocketName = "unequipped_hip_soc";
+	EquippedSocketName = "weapon_light_soc";
 }
 
 void AWeaponBase::OnEquip()
 {
-	Super::OnEquip();
-	
+
+	SetIsEquipped(true);
 	ACharacterBase* OwningChar = Cast<ACharacterBase>(GetOwner());
 	UAnimInstance* AnimInst = OwningChar->GetMesh()->GetAnimInstance();
 
@@ -24,6 +24,16 @@ void AWeaponBase::OnEquip()
 		return;
 	}
 
+
+	if (OwningChar->IsCombatEnabled())
+	{
+		AttachActor(EquippedSocketName);
+	}
+	else
+	{
+		AttachActor(UnequippedSocketName);
+	}
+	
 	OwningChar->SetMainWeapon(this);
 
 	bool bIsUsingAnimInterface = false;
@@ -38,21 +48,4 @@ void AWeaponBase::OnEquip()
 void AWeaponBase::OnUnequip()
 {
 
-}
-
-void AWeaponBase::SetAttachedToHand(bool NewAttachment)
-{
-	bIsAttachedToHand = NewAttachment;
-
-	if (ACharacter* OwnerChar = Cast<ACharacter>(GetOwner()))
-	{
-		UAnimInstance* AnimInst = OwnerChar->GetMesh()->GetAnimInstance();
-		bool bIsUsingAnimInterface = false;
-		bIsUsingAnimInterface = AnimInst->Implements<UAnimInstanceInterface>();
-
-		if (bIsUsingAnimInterface)
-		{
-			IAnimInstanceInterface::Execute_UpdateWeaponAttachedToHand(AnimInst, bIsAttachedToHand);
-		}
-	}
 }

@@ -18,10 +18,17 @@ public:
 	ACharacterBase();
 
 	/*-- Getters --*/
+	UFUNCTION(BlueprintPure, Category="Getter")
 	class AWeaponBase* GetMainWeapon() { return MainWeapon; }
+	UFUNCTION(BlueprintPure, Category = "Getter")
+	bool IsCombatEnabled() { return bIsCombatEnabled; }
 
 	/*-- Setters --*/
-	void SetMainWeapon(AWeaponBase* NewWeapon) { MainWeapon = NewWeapon; }
+	UFUNCTION(BlueprintCallable, Category = "Setter")
+	void SetMainWeapon(AWeaponBase* NewWeapon);
+
+	UFUNCTION(BlueprintCallable, Category = "Setter")
+	void SetCombatEnabled(bool NewEnabled);
 	
 protected:
 	virtual void BeginPlay() override;
@@ -34,15 +41,6 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = Input)
 	void OnInteract();
 
-	/*-- Combat --*/
-	UPROPERTY(BlueprintReadOnly, Category="Combat|Weapon")
-	class AWeaponBase* MainWeapon;
-
-	UPROPERTY(EditDefaultsOnly, Category="Attachment")
-	FName HandSocket;
-
-
-
 private:
 	/*-- Input --*/
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -51,4 +49,8 @@ private:
 	class UInputAction* InteractAction;
 	
 	void SweepForInteractable();
+	
+	/*-- Combat --*/
+	class AWeaponBase* MainWeapon;
+	bool bIsCombatEnabled;
 };

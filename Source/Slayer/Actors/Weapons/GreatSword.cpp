@@ -5,6 +5,7 @@
 
 AGreatSword::AGreatSword()
 {
-	AttachSocketName = "unequipped_back_soc";
-	HandSocketName = "weapon_great_soc";
+	CombatType = ECombatType::ECT_GreatSword;
+	UnequippedSocketName = "unequipped_back_soc";
+	EquippedSocketName = "weapon_great_soc";
 }
