@@ -5,6 +5,7 @@
 
 #include "Slayer/Character/CharacterBase.h"
 #include "Slayer/Animation/AnimInstance/AnimInst.h"
+#include "Slayer/Components/CombatComponent.h"
 
 AWeaponBase::AWeaponBase()
 	: CombatType(ECombatType::ECT_None), WeaponDrawMontage(nullptr), WeaponSheathMontage(nullptr)
@@ -17,7 +18,7 @@ void AWeaponBase::OnEquip()
 {
 
 	SetIsEquipped(true);
-	ACharacterBase* OwningChar = Cast<ACharacterBase>(GetOwner());
+	UCombatComponent* CombatComponent = GetOwner()->GetComponentByClass<UCombatComponent>();
 	UAnimInstance* AnimInst = OwningChar->GetMesh()->GetAnimInstance();
 
 	if (!OwningChar || !AnimInst){

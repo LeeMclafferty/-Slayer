@@ -7,38 +7,13 @@
 #include "Slayer/Interfaces/InteractableInterface.h"
 #include "Slayer/Actors/WeaponBase.h"
 #include "Slayer/Interfaces/AnimInstanceInterface.h"
+#include "Slayer/Components/CombatComponent.h"
+
 
 ACharacterBase::ACharacterBase()
-	:ToggleCombatAction(nullptr), InteractAction(nullptr), MainWeapon(nullptr),
-	bIsCombatEnabled(false)
+	:ToggleCombatAction(nullptr), InteractAction(nullptr)
 {
-
-}
-
-void ACharacterBase::SetMainWeapon(AWeaponBase* NewWeapon)
-{
-	if (MainWeapon)
-	{
-		MainWeapon->OnUnequip();
-		MainWeapon->Destroy();
-	}
-
-	MainWeapon = NewWeapon;
-}
-
-void ACharacterBase::SetCombatEnabled(bool NewEnabled)
-{
-	bIsCombatEnabled = NewEnabled;
-
-
-	UAnimInstance* AnimInst = GetMesh()->GetAnimInstance();
-	bool bIsUsingAnimInterface = false;
-	bIsUsingAnimInterface = AnimInst->Implements<UAnimInstanceInterface>();
-
-	if (bIsUsingAnimInterface)
-	{
-		IAnimInstanceInterface::Execute_UpdateCombatEnabled(AnimInst, bIsCombatEnabled);
-	}
+	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("Combat Component"));
 }
 
 void ACharacterBase::BeginPlay()
@@ -60,20 +35,20 @@ void ACharacterBase::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 
 void ACharacterBase::ToggleCombat()
 {
-	if (!MainWeapon) {
+	if (!CombatComponent->GetMainWeapon()) {
 		return;
 	}
 
 	UAnimMontage* MontageToPlay;
-	if (IsCombatEnabled())
+	if (CombatComponent->IsCombatEnabled())
 	{
-		MontageToPlay = MainWeapon->GetWeaponSheathMontage();
-		SetCombatEnabled(false);
+		MontageToPlay = CombatComponent->GetMainWeapon()->GetWeaponSheathMontage();
+		CombatComponent->SetCombatEnabled(false);
 	}
 	else
 	{
-		MontageToPlay = MainWeapon->GetWeaponDrawMontage();
-		SetCombatEnabled(true);
+		MontageToPlay = CombatComponent->GetMainWeapon()->GetWeaponDrawMontage();
+		CombatComponent->SetCombatEnabled(true);
 	}
 	
 	if(MontageToPlay)

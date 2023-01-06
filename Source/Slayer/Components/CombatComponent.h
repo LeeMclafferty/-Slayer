@@ -15,6 +15,20 @@ class SLAYER_API UCombatComponent : public UActorComponent
 public:	
 	UCombatComponent();
 
+	/*-- Getters --*/
+	UFUNCTION(BlueprintPure, Category = "Getter")
+	class AWeaponBase* GetMainWeapon() { return MainWeapon; }
+
+	UFUNCTION(BlueprintPure, Category = "Getter")
+	bool IsCombatEnabled() { return bIsCombatEnabled; }
+
+	/*-- Setters --*/
+	UFUNCTION(BlueprintCallable, Category = "Setter")
+	void SetMainWeapon(AWeaponBase* NewWeapon);
+
+	UFUNCTION(BlueprintCallable, Category = "Setter")
+	void SetCombatEnabled(bool NewEnabled);
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -22,8 +36,7 @@ protected:
 
 private:
 
-
-	
-
+	class AWeaponBase* MainWeapon;
+	bool bIsCombatEnabled;
 		
 };
