@@ -16,17 +16,19 @@ AWeaponBase::AWeaponBase()
 
 void AWeaponBase::OnEquip()
 {
+	Super::OnEquip();
 
 	SetIsEquipped(true);
-	UCombatComponent* CombatComponent = GetOwner()->GetComponentByClass<UCombatComponent>();
+	CombatComponent = Cast<UCombatComponent>(GetOwner()->GetComponentByClass(UCombatComponent::StaticClass()));
+	ACharacterBase* OwningChar = Cast<ACharacterBase>(GetOwner());
 	UAnimInstance* AnimInst = OwningChar->GetMesh()->GetAnimInstance();
 
-	if (!OwningChar || !AnimInst){
+	if (!CombatComponent || !AnimInst){
 		return;
 	}
 
 
-	if (OwningChar->IsCombatEnabled())
+	if (CombatComponent->IsCombatEnabled())
 	{
 		AttachActor(EquippedSocketName);
 	}
@@ -35,7 +37,7 @@ void AWeaponBase::OnEquip()
 		AttachActor(UnequippedSocketName);
 	}
 	
-	OwningChar->SetMainWeapon(this);
+	CombatComponent->SetMainWeapon(this);
 
 	bool bIsUsingAnimInterface = false;
 	bIsUsingAnimInterface = AnimInst->Implements<UAnimInstanceInterface>();

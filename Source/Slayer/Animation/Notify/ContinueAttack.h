@@ -4,21 +4,18 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimNotifies/AnimNotify.h"
-#include "AttachWeaponAnimNotify.generated.h"
+#include "ContinueAttack.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class SLAYER_API UAttachWeaponAnimNotify : public UAnimNotify
+class SLAYER_API UContinueAttack : public UAnimNotify
 {
 	GENERATED_BODY()
 	
 public:
-	UAttachWeaponAnimNotify();
 
+	UContinueAttack();
 	virtual void Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation) override;
-
-	UPROPERTY(EditAnywhere, Category = "Initilization")
-	FName SocketName;
 };

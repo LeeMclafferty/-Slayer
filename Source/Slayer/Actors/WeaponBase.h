@@ -26,6 +26,8 @@ public:
 	UAnimMontage* GetWeaponDrawMontage() { return WeaponDrawMontage; }
 	UFUNCTION(BlueprintPure, Category = "Getter")
 	UAnimMontage* GetWeaponSheathMontage() { return WeaponSheathMontage; }
+	UFUNCTION(BlueprintPure, Category="Getter")
+	TArray<UAnimMontage*> GetAttackMontages() { return AttackMontages; }
 
 	/* --  Attachment --*/
 	virtual void OnEquip() override;
@@ -39,4 +41,10 @@ private:
 	class UAnimMontage* WeaponDrawMontage;
 	UPROPERTY(EditDefaultsOnly, Category = "Animation")
 	class UAnimMontage* WeaponSheathMontage;
+
+	class UCombatComponent* CombatComponent;
+
+	UPROPERTY(EditDefaultsOnly, Category="Animation|Attack")
+	TArray<UAnimMontage*> AttackMontages;
+
 };

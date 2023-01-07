@@ -5,8 +5,10 @@
 
 #include "Slayer/Character/CharacterBase.h"
 #include "Slayer/Actors/WeaponBase.h"
+#include "Slayer/Components/CombatComponent.h"
 
 UAttachWeaponAnimNotify::UAttachWeaponAnimNotify()
+	:SocketName("None")
 {
 
 }
@@ -15,24 +17,21 @@ void UAttachWeaponAnimNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequ
 {
 	Super::Notify(MeshComp, Animation);
 
-	if (auto OwningChar = Cast<ACharacterBase>(MeshComp->GetOwner()))
-	{
-		if (!OwningChar->GetMainWeapon()) {
+		UCombatComponent* CombatComponent = Cast<UCombatComponent>(MeshComp->GetOwner()->GetComponentByClass(UCombatComponent::StaticClass()));
+		if (!CombatComponent) {
+			//UE_LOG(LogTemp, Warning, TEXT("No Combat CompFound"));
 			return;
 		}
 
-		AWeaponBase* Weapon = OwningChar->GetMainWeapon();
-
-		FName SocketToUse;
-		if (bShouldAttachToHand)
-		{
-			SocketToUse = Weapon->GetEquippedSocketName();
-		}
-		else
-		{
-			SocketToUse = Weapon->GetUnequippedSocketName();
+		if (!CombatComponent->GetMainWeapon()) {
+			return;
 		}
 
-		Weapon->AttachActor(SocketToUse);
-	}
+		AWeaponBase* Weapon = CombatComponent->GetMainWeapon();
+		if (!Weapon) {
+			return;
+		}
+
+		Weapon->AttachActor(SocketName);
+
 }

@@ -12,11 +12,9 @@ AEquippableBase::AEquippableBase()
 	PrimaryActorTick.bCanEverTick = true;
 
 	ItemStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemStaticMesh"));
-	ItemStaticMesh->SetupAttachment(RootComponent);
 	ItemStaticMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
+	 
 	ItemSkeletalMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ItemSkeletalMesh"));
-	ItemSkeletalMesh->SetupAttachment(RootComponent);
 
 }
 

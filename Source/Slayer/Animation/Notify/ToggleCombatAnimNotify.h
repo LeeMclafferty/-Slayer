@@ -4,21 +4,22 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimNotifies/AnimNotify.h"
-#include "AttachWeaponAnimNotify.generated.h"
+#include "ToggleCombatAnimNotify.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class SLAYER_API UAttachWeaponAnimNotify : public UAnimNotify
+class SLAYER_API UToggleCombatAnimNotify : public UAnimNotify
 {
 	GENERATED_BODY()
-	
-public:
-	UAttachWeaponAnimNotify();
 
+public:
+	UToggleCombatAnimNotify();
+	 
 	virtual void Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation) override;
 
-	UPROPERTY(EditAnywhere, Category = "Initilization")
-	FName SocketName;
+	UPROPERTY(EditAnywhere, Category="Initialization")
+	bool bShouldCombatEnabled;
+	
 };
