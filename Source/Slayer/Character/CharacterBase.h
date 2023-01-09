@@ -19,6 +19,7 @@ public:
 	ACharacterBase();
 
 	/*-- Getters --*/
+	UFUNCTION(BlueprintPure, Category="Getter")
 	class UCombatComponent* GetCombatComponent() { return CombatComponent; }
 
 	/*-- Setters --*/
@@ -27,6 +28,13 @@ public:
 	UFUNCTION(BlueprintNativeEvent, Category = "CombatInterface")
 	void ContinueAttack();
 	void ContinueAttack_Implementation();
+
+	UFUNCTION(BlueprintNativeEvent, Category = "CombatInterface")
+	void ResetAttack();
+	void ResetAttack_Implementation();
+
+	UPROPERTY(BlueprintReadWrite, Category="Combat")
+	bool bIsTogglingCombat;
 	
 protected:
 	virtual void BeginPlay() override;
@@ -43,12 +51,23 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent, Category="Input|Combat")
 	void PerformAttack(int32 AttackIndex, bool UseRandomIndex);
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "Input|Interact")
+	void PerformDodge(int32 MontageIndex, bool bUseRandom);
+
+
 	/*-- Combat --*/
 	UFUNCTION(BlueprintCallable, Category="Combat")
 	void Attack(int32 AttackIndex, bool UseRandomIndex);
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void OnAttack(int32 AttackIndex, bool UseRandomIndex);
+
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void Dodge(int32 MontageIndex, bool bUseRandom);
+
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void OnDodge(int32 MontageIndex, bool bUseRandom);
+
 private:
 	/*-- Input --*/
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
@@ -60,9 +79,21 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* LightAttackAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* DodgeAction;
+
+
 	void SweepForInteractable();
 	
+
 	/*-- Combat --*/
 	UPROPERTY(VisibleAnywhere)
 	class UCombatComponent* CombatComponent;
+
+	bool CanToggleCombat();
+	bool CanAttack();
+	bool CanDodge();
+
+	UPROPERTY(EditDefaultsOnly, Category = "Animation|Attack")
+	TArray<UAnimMontage*> DodgeMontages;
 };

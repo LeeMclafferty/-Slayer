@@ -28,9 +28,6 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Getter")
 	bool IsAttacking() { return bIsAttacking; }
 
-	UFUNCTION(BlueprintPure, Category = "Getter")
-	int32 GetAttackCount() { return AttackCount; }
-
 	/*-- Setters --*/
 	UFUNCTION(BlueprintCallable, Category = "Setter")
 	void SetMainWeapon(AWeaponBase* NewWeapon);
@@ -43,6 +40,12 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Setter")
 	void SetIsAttacking(bool NewAttacking);
+	
+	
+	UPROPERTY(BlueprintReadWrite, Category="Attack")
+	int32 AttackCount;
+
+	void ResetAttack();
 
 protected:
 	// Called when the game starts
@@ -53,7 +56,6 @@ private:
 
 	class AWeaponBase* MainWeapon;
 	bool bIsCombatEnabled;
-	int32 AttackCount;
 	bool bWasAttackedSaved;
 	bool bIsAttacking;
 		

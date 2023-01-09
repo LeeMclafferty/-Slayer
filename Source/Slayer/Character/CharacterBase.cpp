@@ -12,7 +12,7 @@
 
 
 ACharacterBase::ACharacterBase()
-	:ToggleCombatAction(nullptr), InteractAction(nullptr)
+	:bIsTogglingCombat(false), ToggleCombatAction(nullptr), InteractAction(nullptr)
 {
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("Combat Component"));
 }
@@ -35,11 +35,25 @@ void ACharacterBase::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 	}
 }
 
+bool ACharacterBase::CanToggleCombat()
+{
+	if (CombatComponent && CombatComponent->GetMainWeapon() && !bIsTogglingCombat && !CombatComponent->IsAttacking())
+	{
+		return true;
+	}
+
+	return false;
+}
+
 void ACharacterBase::ToggleCombat()
 {
-	if (!CombatComponent->GetMainWeapon()) {
+
+	if (!CanToggleCombat())
+	{
 		return;
 	}
+	
+	bIsTogglingCombat = true;
 
 	UAnimMontage* MontageToPlay;
 	if (CombatComponent->IsCombatEnabled())
@@ -53,6 +67,8 @@ void ACharacterBase::ToggleCombat()
 	
 	if(MontageToPlay)
 		GetMesh()->GetAnimInstance()->Montage_Play(MontageToPlay);
+	
+	bIsTogglingCombat = false;
 }
 
 void ACharacterBase::OnInteract()
@@ -60,26 +76,52 @@ void ACharacterBase::OnInteract()
 	SweepForInteractable();
 }
 
+bool ACharacterBase::CanAttack()
+{
+	if (CombatComponent && CombatComponent->GetMainWeapon() && !bIsTogglingCombat && !CombatComponent->IsAttacking())
+	{
+		return true;
+	}
+
+	return false;
+}
+
 void ACharacterBase::Attack(int32 AttackIndex, bool UseRandomIndex)
 {
-	TArray<UAnimMontage*> AttackMontages = CombatComponent->GetMainWeapon()->GetAttackMontages();
+	if ( !CombatComponent|| !CombatComponent->GetMainWeapon())
+		return;
+
+	AWeaponBase* Weapon = CombatComponent->GetMainWeapon();
+	TArray<UAnimMontage*> AttackMontages = Weapon->GetAttackMontages();
 
 	UAnimMontage* AttackToPlay = nullptr;
 	if (UseRandomIndex)
 	{
-		//GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Purple, FString::Printf(TEXT("Rand")));
-		AttackToPlay = AttackMontages[FMath::FRandRange(0, AttackMontages.Num())];
+		AttackToPlay = AttackMontages[FMath::RandRange(0, AttackMontages.Num() - 1)];
 	}
 	else
 	{
-		AttackToPlay = AttackMontages[AttackIndex];
-
+		if (AttackMontages[AttackIndex]) 
+		{
+			AttackToPlay = AttackMontages[AttackIndex];
+		}
 	}
 
 	CombatComponent->SetIsAttacking(true);
 
-	if (AttackToPlay)
+	if (AttackToPlay && Weapon->IsEquipped())
 		GetMesh()->GetAnimInstance()->Montage_Play(AttackToPlay);
+	
+	int32 LastIndex = AttackMontages.Num() - 1;
+
+	if (CombatComponent->AttackCount + 1 > LastIndex)
+	{
+		CombatComponent->AttackCount = 0;
+	}
+	else
+	{
+		CombatComponent->AttackCount++;
+	}
 }
 
 void ACharacterBase::OnAttack(int32 AttackIndex, bool UseRandomIndex)
@@ -87,7 +129,7 @@ void ACharacterBase::OnAttack(int32 AttackIndex, bool UseRandomIndex)
 	/* Calls the bp implementable event, that calls attack. This system is to be able to use input bindings 
 	with parameters easier. I also use this to gate keep button spamming*/
 
-	if (!CombatComponent) {
+	if (!CanAttack()) {
 		return;
 	}
 
@@ -139,6 +181,7 @@ void ACharacterBase::SweepForInteractable()
 	}
 }
 
+
 void ACharacterBase::ContinueAttack_Implementation()
 {
 	CombatComponent->SetIsAttacking(false);
@@ -146,6 +189,58 @@ void ACharacterBase::ContinueAttack_Implementation()
 	if (CombatComponent->WasAttackSaved())
 	{
 		CombatComponent->ShouldSaveAttack(false);
-		OnAttack(CombatComponent->GetAttackCount(), false);
+		OnAttack(CombatComponent->AttackCount, false);
 	}
+}
+
+void ACharacterBase::ResetAttack_Implementation()
+{
+	if (!CombatComponent)
+	{
+		return;
+	}
+
+	CombatComponent->ResetAttack();
+}
+
+bool ACharacterBase::CanDodge()
+{
+	if (CombatComponent && !bIsTogglingCombat && !CombatComponent->IsAttacking())
+	{
+		return true;
+	}
+
+	return false;
+}
+
+void ACharacterBase::Dodge(int32 MontageIndex, bool bUseRandom)
+{
+	if (!CombatComponent || !CombatComponent->GetMainWeapon())
+		return;
+
+	UAnimMontage* MontageToPlay = nullptr;
+	if (bUseRandom)
+	{
+		MontageToPlay = DodgeMontages[FMath::RandRange(0, DodgeMontages.Num() - 1)];
+	}
+	else
+	{
+		if (DodgeMontages[MontageIndex])
+		{
+			MontageToPlay = DodgeMontages[FMath::RandRange(0, DodgeMontages.Num() - 1)];
+		}
+	}
+
+	if (MontageToPlay && CanDodge())
+		GetMesh()->GetAnimInstance()->Montage_Play(MontageToPlay);
+}
+
+void ACharacterBase::OnDodge(int32 MontageIndex, bool bUseRandom)
+{
+	if (!CanDodge())
+	{
+		return;
+	}
+
+	PerformDodge(MontageIndex, bUseRandom);
 }

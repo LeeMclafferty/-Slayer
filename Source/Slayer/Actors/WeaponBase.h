@@ -24,8 +24,10 @@ public:
 	/*-- Getters --*/
 	UFUNCTION(BlueprintPure, Category="Getter")
 	UAnimMontage* GetWeaponDrawMontage() { return WeaponDrawMontage; }
+	
 	UFUNCTION(BlueprintPure, Category = "Getter")
 	UAnimMontage* GetWeaponSheathMontage() { return WeaponSheathMontage; }
+	
 	UFUNCTION(BlueprintPure, Category="Getter")
 	TArray<UAnimMontage*> GetAttackMontages() { return AttackMontages; }
 

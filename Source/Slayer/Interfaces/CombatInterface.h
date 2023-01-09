@@ -25,4 +25,7 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, Category="CombatInterface")
 	void ContinueAttack();
+
+	UFUNCTION(BlueprintNativeEvent, Category = "CombatInterface")
+	void ResetAttack();
 };

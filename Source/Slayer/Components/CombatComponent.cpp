@@ -7,7 +7,7 @@
 #include "Slayer/Animation/AnimInstance/AnimInst.h"
 
 UCombatComponent::UCombatComponent()
-	:MainWeapon(nullptr), bIsCombatEnabled(false), AttackCount(0), bWasAttackedSaved(false), 
+	:AttackCount(0), MainWeapon(nullptr), bIsCombatEnabled(false), bWasAttackedSaved(false),
 	bIsAttacking(false)
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -65,3 +65,11 @@ void UCombatComponent::SetIsAttacking(bool NewAttacking)
 {
 	bIsAttacking = NewAttacking;
 }
+
+void UCombatComponent::ResetAttack()
+{
+	AttackCount = 0;
+	bIsAttacking = false;
+	bWasAttackedSaved = false;
+}
+
