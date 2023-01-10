@@ -4,6 +4,7 @@
 #include "Slayer/Character/CharacterBase.h"
 #include "EnhancedInputComponent.h"
 #include "Math/UnrealMathUtility.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 #include "Slayer/Interfaces/InteractableInterface.h"
 #include "Slayer/Actors/WeaponBase.h"
@@ -12,7 +13,7 @@
 
 
 ACharacterBase::ACharacterBase()
-	:bIsTogglingCombat(false), ToggleCombatAction(nullptr), InteractAction(nullptr)
+	:bIsTogglingCombat(false), bIsDodging(false), ToggleCombatAction(nullptr), InteractAction(nullptr)
 {
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("Combat Component"));
 }
@@ -203,9 +204,21 @@ void ACharacterBase::ResetAttack_Implementation()
 	CombatComponent->ResetAttack();
 }
 
+FRotator ACharacterBase::GetDesiredRotation_Implementation()
+{
+	FVector LastMove = GetCharacterMovement()->GetLastInputVector();
+
+	if (!FMath::IsNearlyZero(LastMove.X ,.001))
+	{
+		return LastMove.ToOrientationRotator();
+	}
+
+	return GetActorRotation();
+}
+
 bool ACharacterBase::CanDodge()
 {
-	if (CombatComponent && !bIsTogglingCombat && !CombatComponent->IsAttacking())
+	if (CombatComponent && !bIsTogglingCombat && !CombatComponent->IsAttacking() && !bIsDodging)
 	{
 		return true;
 	}
@@ -215,8 +228,6 @@ bool ACharacterBase::CanDodge()
 
 void ACharacterBase::Dodge(int32 MontageIndex, bool bUseRandom)
 {
-	if (!CombatComponent || !CombatComponent->GetMainWeapon())
-		return;
 
 	UAnimMontage* MontageToPlay = nullptr;
 	if (bUseRandom)
@@ -231,7 +242,7 @@ void ACharacterBase::Dodge(int32 MontageIndex, bool bUseRandom)
 		}
 	}
 
-	if (MontageToPlay && CanDodge())
+	if (MontageToPlay)
 		GetMesh()->GetAnimInstance()->Montage_Play(MontageToPlay);
 }
 
@@ -242,5 +253,6 @@ void ACharacterBase::OnDodge(int32 MontageIndex, bool bUseRandom)
 		return;
 	}
 
+	bIsDodging = true;
 	PerformDodge(MontageIndex, bUseRandom);
 }

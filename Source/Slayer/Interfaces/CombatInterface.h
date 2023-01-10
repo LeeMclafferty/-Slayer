@@ -28,4 +28,7 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, Category = "CombatInterface")
 	void ResetAttack();
+
+	UFUNCTION(BlueprintNativeEvent, Category = "CombatInterface")
+	FRotator GetDesiredRotation();
 };

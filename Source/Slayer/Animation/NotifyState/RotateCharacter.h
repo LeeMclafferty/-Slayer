@@ -13,5 +13,16 @@ UCLASS()
 class SLAYER_API URotateCharacter : public UAnimNotifyState
 {
 	GENERATED_BODY()
+
+	URotateCharacter();
+
+	void NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration);
+
+	void NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float FrameDeltaTime);
+
+	void NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation);
+
+	UPROPERTY(EditAnywhere)
+	float RotationSpeed;
 	
 };

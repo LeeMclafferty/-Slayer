@@ -33,8 +33,16 @@ public:
 	void ResetAttack();
 	void ResetAttack_Implementation();
 
+	UFUNCTION(BlueprintNativeEvent, Category = "CombatInterface")
+	FRotator GetDesiredRotation();
+	FRotator GetDesiredRotation_Implementation();
+
+
 	UPROPERTY(BlueprintReadWrite, Category="Combat")
 	bool bIsTogglingCombat;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Movement")
+	bool bIsDodging;
 	
 protected:
 	virtual void BeginPlay() override;
