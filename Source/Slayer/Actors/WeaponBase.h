@@ -7,9 +7,6 @@
 #include "Slayer/Enums/CombatTypes.h"
 #include "WeaponBase.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class SLAYER_API AWeaponBase : public AEquippableBase
 {
@@ -24,18 +21,23 @@ public:
 	/*-- Getters --*/
 	UFUNCTION(BlueprintPure, Category="Getter")
 	UAnimMontage* GetWeaponDrawMontage() { return WeaponDrawMontage; }
-	
 	UFUNCTION(BlueprintPure, Category = "Getter")
 	UAnimMontage* GetWeaponSheathMontage() { return WeaponSheathMontage; }
-	
 	UFUNCTION(BlueprintPure, Category="Getter")
 	TArray<UAnimMontage*> GetAttackMontages() { return AttackMontages; }
+	UFUNCTION(BlueprintPure, Category = "Getter")
+	class UCollisionComponent* GetCollisionComp() { return CollisionComponent; }
 
 	/* --  Attachment --*/
 	virtual void OnEquip() override;
 	virtual void OnUnequip() override;
 
+	UFUNCTION()
+	void OnHit(FHitResult Hit);
+
 protected:
+
+	virtual void BeginPlay() override;
 
 private:
 	/*-- Animation --*/
@@ -48,5 +50,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category="Animation|Attack")
 	TArray<UAnimMontage*> AttackMontages;
+
+	/* -- Collision --*/
+	UPROPERTY(VisibleAnywhere)
+	class UCollisionComponent* CollisionComponent;
 
 };

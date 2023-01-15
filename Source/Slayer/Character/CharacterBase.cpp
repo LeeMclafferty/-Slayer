@@ -10,6 +10,7 @@
 #include "Slayer/Actors/WeaponBase.h"
 #include "Slayer/Interfaces/AnimInstanceInterface.h"
 #include "Slayer/Components/CombatComponent.h"
+#include "Slayer/Components/CollisionComponent.h"
 
 
 ACharacterBase::ACharacterBase()
@@ -79,7 +80,7 @@ void ACharacterBase::OnInteract()
 
 bool ACharacterBase::CanAttack()
 {
-	if (CombatComponent && CombatComponent->GetMainWeapon() && !bIsTogglingCombat && !CombatComponent->IsAttacking())
+	if (CombatComponent && CombatComponent->GetMainWeapon() && !bIsTogglingCombat && !CombatComponent->IsAttacking() && !bIsDodging)
 	{
 		return true;
 	}
@@ -214,6 +215,13 @@ FRotator ACharacterBase::GetDesiredRotation_Implementation()
 	}
 
 	return GetActorRotation();
+}
+
+void ACharacterBase::ResetCombat_Implementation()
+{
+	CombatComponent->ResetAttack();
+	bIsTogglingCombat = false;
+	bIsDodging = false;
 }
 
 bool ACharacterBase::CanDodge()

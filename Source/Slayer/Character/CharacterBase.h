@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Slayer/SlayerCharacter.h"
 #include "Slayer/Interfaces/CombatInterface.h"
+#include "Slayer/Components/CombatComponent.h"
 #include "CharacterBase.generated.h"
 
 /**
@@ -36,6 +37,10 @@ public:
 	UFUNCTION(BlueprintNativeEvent, Category = "CombatInterface")
 	FRotator GetDesiredRotation();
 	FRotator GetDesiredRotation_Implementation();
+
+	UFUNCTION(BlueprintNativeEvent, Category = "CombatInterface")
+	void ResetCombat();
+	void ResetCombat_Implementation();
 
 
 	UPROPERTY(BlueprintReadWrite, Category="Combat")
@@ -104,4 +109,5 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Animation|Attack")
 	TArray<UAnimMontage*> DodgeMontages;
+
 };
