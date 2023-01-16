@@ -5,6 +5,11 @@
 #include "EnhancedInputComponent.h"
 #include "Math/UnrealMathUtility.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraSystem.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Components/CapsuleComponent.h"
 
 #include "Slayer/Interfaces/InteractableInterface.h"
 #include "Slayer/Actors/WeaponBase.h"
@@ -14,7 +19,8 @@
 
 
 ACharacterBase::ACharacterBase()
-	:bIsTogglingCombat(false), bIsDodging(false), ToggleCombatAction(nullptr), InteractAction(nullptr)
+	:bIsTogglingCombat(false), bIsDodging(false), bIsDisabled(false), bIsDead(false), 
+	Health(100.f), ToggleCombatAction(nullptr), InteractAction(nullptr)
 {
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("Combat Component"));
 }
@@ -22,7 +28,8 @@ ACharacterBase::ACharacterBase()
 void ACharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
+	OnTakePointDamage.AddDynamic(this, &ACharacterBase::TakePointDamage);
 }
 
 void ACharacterBase::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
@@ -39,7 +46,7 @@ void ACharacterBase::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 
 bool ACharacterBase::CanToggleCombat()
 {
-	if (CombatComponent && CombatComponent->GetMainWeapon() && !bIsTogglingCombat && !CombatComponent->IsAttacking())
+	if(CanAttack())
 	{
 		return true;
 	}
@@ -80,7 +87,8 @@ void ACharacterBase::OnInteract()
 
 bool ACharacterBase::CanAttack()
 {
-	if (CombatComponent && CombatComponent->GetMainWeapon() && !bIsTogglingCombat && !CombatComponent->IsAttacking() && !bIsDodging)
+	if (CombatComponent && CombatComponent->GetMainWeapon() && !bIsTogglingCombat && 
+		!CombatComponent->IsAttacking() && !bIsDodging && !bIsDisabled && !bIsDead)
 	{
 		return true;
 	}
@@ -90,10 +98,11 @@ bool ACharacterBase::CanAttack()
 
 void ACharacterBase::Attack(int32 AttackIndex, bool UseRandomIndex)
 {
-	if ( !CombatComponent|| !CombatComponent->GetMainWeapon())
+	AWeaponBase* Weapon = CombatComponent->GetMainWeapon();
+
+	if ( !CombatComponent|| !Weapon || !CombatComponent->IsCombatEnabled())
 		return;
 
-	AWeaponBase* Weapon = CombatComponent->GetMainWeapon();
 	TArray<UAnimMontage*> AttackMontages = Weapon->GetAttackMontages();
 
 	UAnimMontage* AttackToPlay = nullptr;
@@ -175,14 +184,13 @@ void ACharacterBase::SweepForInteractable()
 	if (bUsesInterface)
 	{
 		IInteractableInterface::Execute_Interact(OutHit.GetActor(), this);
-		DrawDebugSphere(GetWorld(), StartLocation, 100.f, 8, FColor::Green, false, 2.0f, 0, 2.0f);
+		//DrawDebugSphere(GetWorld(), StartLocation, 100.f, 8, FColor::Green, false, 2.0f, 0, 2.0f);
 	}
 	else
 	{
-		DrawDebugSphere(GetWorld(), StartLocation, 100.f, 8, FColor::Red, false, 2.0f, 0, 2.0f);
+		//DrawDebugSphere(GetWorld(), StartLocation, 100.f, 8, FColor::Red, false, 2.0f, 0, 2.0f);
 	}
 }
-
 
 void ACharacterBase::ContinueAttack_Implementation()
 {
@@ -203,6 +211,7 @@ void ACharacterBase::ResetAttack_Implementation()
 	}
 
 	CombatComponent->ResetAttack();
+	bIsDisabled = false;
 }
 
 FRotator ACharacterBase::GetDesiredRotation_Implementation()
@@ -224,14 +233,73 @@ void ACharacterBase::ResetCombat_Implementation()
 	bIsDodging = false;
 }
 
-bool ACharacterBase::CanDodge()
+bool ACharacterBase::CanRecieveDamge_Implementation()
 {
-	if (CombatComponent && !bIsTogglingCombat && !CombatComponent->IsAttacking() && !bIsDodging)
+	if (!bIsDead)
 	{
 		return true;
 	}
 
 	return false;
+}
+
+void ACharacterBase::EnableRagDoll()
+{
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECollisionResponse::ECR_Ignore);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECollisionResponse::ECR_Ignore);
+	GetMesh()->SetCollisionProfileName("ragdoll");
+	GetMesh()->SetAllBodiesBelowSimulatePhysics(FName("Pelvis"), true, true);
+	GetMesh()->SetAllBodiesBelowPhysicsBlendWeight(FName("Pelvis"), 1.f);
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+	GetCameraBoom()->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepWorldTransform, FName("Pelvis"));
+	GetCameraBoom()->bDoCollisionTest = false;
+	ApplyHitReactionVelocity(2000.f);
+
+	AWeaponBase* Weapon = CombatComponent->GetMainWeapon();
+	if (Weapon)
+	{
+		Weapon->SimulateWeaponPhysics();
+	}
+}
+
+void ACharacterBase::Death()
+{
+	bIsDead = true;
+	EnableRagDoll();
+
+	// Add logic here for destroying dead actors after some time, probably will want some magic dissolve FX.
+}
+
+void ACharacterBase::ApplyHitReactionVelocity(float InitSpeed)
+{
+	// multiply -1 to go backwards.
+	FVector NewVel = GetActorForwardVector() * (InitSpeed * -1);
+	GetMesh()->SetPhysicsLinearVelocity(NewVel, false, FName("Pelvis"));
+}
+
+bool ACharacterBase::CanDodge()
+{
+	if (CombatComponent && !bIsTogglingCombat && !CombatComponent->IsAttacking() && !bIsDodging
+		&& !bIsDisabled && !bIsDead)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+void ACharacterBase::TakePointDamage(AActor* DamagedActor, float Damage, class AController* InstigatedBy, FVector HitLocation, class UPrimitiveComponent* FHitComponent, FName BoneName, FVector ShotFromDirection, const class UDamageType* DamageType, AActor* DamageCauser)
+{
+	TakeDamgae(Damage);
+
+	if(BloodVFX)
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), BloodVFX, HitLocation);
+	if(HitSound)
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), (USoundBase*)HitSound, HitLocation, HitLocation.Rotation());
+	if(HitMontage)
+		GetMesh()->GetAnimInstance()->Montage_Play(HitMontage);
+
+	bIsDisabled = true;
 }
 
 void ACharacterBase::Dodge(int32 MontageIndex, bool bUseRandom)
@@ -263,4 +331,14 @@ void ACharacterBase::OnDodge(int32 MontageIndex, bool bUseRandom)
 
 	bIsDodging = true;
 	PerformDodge(MontageIndex, bUseRandom);
+}
+
+void ACharacterBase::TakeDamgae(float Damage)
+{
+	Health = FMath::Clamp(Health, 0, Health - Damage);
+
+	if (Health <= 0)
+	{
+		Death();
+	}
 }

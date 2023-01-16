@@ -34,4 +34,7 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, Category = "CombatInterface")
 	void ResetCombat();
+
+	UFUNCTION(BlueprintNativeEvent, Category = "CombatInterface")
+	bool CanRecieveDamge();
 };

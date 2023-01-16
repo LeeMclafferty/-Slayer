@@ -2,6 +2,7 @@
 
 
 #include "Slayer/Actors/WeaponBase.h"
+#include "Kismet/GameplayStatics.h"
 
 #include "Slayer/Character/CharacterBase.h"
 #include "Slayer/Animation/AnimInstance/AnimInst.h"
@@ -9,7 +10,8 @@
 #include "Slayer/Components/CollisionComponent.h"
 
 AWeaponBase::AWeaponBase()
-	: CombatType(ECombatType::ECT_None), WeaponDrawMontage(nullptr), WeaponSheathMontage(nullptr)
+	: CombatType(ECombatType::ECT_None), WeaponDrawMontage(nullptr), WeaponSheathMontage(nullptr),
+	WeaponDamage(20.f)
 {
 	UnequippedSocketName = "unequipped_hip_soc";
 	EquippedSocketName = "weapon_light_soc";
@@ -22,6 +24,12 @@ void AWeaponBase::BeginPlay()
 {
 	Super::BeginPlay();
 	CollisionComponent->OnHit.AddDynamic(this, &AWeaponBase::OnHit);
+}
+
+void AWeaponBase::SimulateWeaponPhysics()
+{
+	GetItemMesh()->SetSimulatePhysics(true);
+	GetItemMesh()->SetCollisionProfileName("PhysicsActor");
 }
 
 void AWeaponBase::OnEquip()
@@ -69,5 +77,15 @@ void AWeaponBase::OnUnequip()
 
 void AWeaponBase::OnHit(FHitResult Hit)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Purple, FString::Printf(TEXT("Hit Detected")));
+	if (Hit.GetActor()->Implements<UCombatInterface>())
+	{
+		bool bCanTakeDmg = ICombatInterface::Execute_CanRecieveDamge(Hit.GetActor());
+
+		if (bCanTakeDmg)
+		{
+			UGameplayStatics::ApplyPointDamage(Hit.GetActor(), WeaponDamage, GetOwner()->GetActorForwardVector(),
+				Hit, GetOwner()->GetInstigatorController(), this,
+				DamgeTypeClass);
+		}
+	}
 }

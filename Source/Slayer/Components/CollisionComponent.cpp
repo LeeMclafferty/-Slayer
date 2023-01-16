@@ -3,10 +3,12 @@
 
 #include "Slayer/Components/CollisionComponent.h"
 #include "Components/PrimitiveComponent.h"
+#include "DrawDebugHelpers.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 UCollisionComponent::UCollisionComponent()
 	:bIsCollisionEnabled(false), CollisionMeshComponent(nullptr), 
-	StartSocketName("collision_start"),EndSocketName("collision_end"), Radius(20.f)
+	StartSocketName("collision_start"),EndSocketName("collision_end"), Radius(10.f)
 {
 	PrimaryComponentTick.bCanEverTick = true;
 
@@ -69,8 +71,11 @@ void UCollisionComponent::CollisionTrace()
 	FCollisionObjectQueryParams ObjectParams;
 	ObjectParams.AddObjectTypesToQuery(ECollisionChannel::ECC_Pawn);
 
-	GetWorld()->SweepMultiByObjectType(OutHits, StartLocation, EndLocation, Rotation, ObjectParams, ColShape, Params);
+	UWorld* World = GetWorld();
+	World->SweepMultiByObjectType(OutHits, StartLocation, EndLocation, Rotation, ObjectParams, ColShape, Params);
 	
+	// Just for the debug capsule
+	//FRotator Rot(0,0,0);
 	for (FHitResult Hit : OutHits)
 	{
 		LastHit = Hit;
@@ -78,9 +83,9 @@ void UCollisionComponent::CollisionTrace()
 		{
 			AlreadyHitActors.Add(Hit.GetActor());
 			OnHit.Broadcast(LastHit);
-			DrawDebugSphere(GetWorld(), EndLocation, Radius, 8, FColor::Green, false, 2.0f, 0, 2.0f);
+			//UKismetSystemLibrary::DrawDebugCapsule(World, CollisionMeshComponent->GetSocketLocation("mid_point"), 50.f, Radius, Rot, FColor::Green, 2.0f, 2.0f);
 		}
 	}
 	
-	DrawDebugCapsule(GetWorld(), EndLocation,50.f, Radius,Rotation, FColor::Red, false, 2.0f, 0, 2.0f);
+	//UKismetSystemLibrary::DrawDebugCapsule(World, CollisionMeshComponent->GetSocketLocation("mid_point"), 50.f, Radius, Rot, FColor::Red, 2.0f, 2.0f);
 }

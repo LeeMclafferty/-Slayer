@@ -35,9 +35,11 @@ public:
 	UFUNCTION()
 	void OnHit(FHitResult Hit);
 
+	void SimulateWeaponPhysics();
 protected:
 
 	virtual void BeginPlay() override;
+
 
 private:
 	/*-- Animation --*/
@@ -54,5 +56,11 @@ private:
 	/* -- Collision --*/
 	UPROPERTY(VisibleAnywhere)
 	class UCollisionComponent* CollisionComponent;
+
+	/* -- Stats --*/
+	UPROPERTY(EditDefaultsOnly, Category = "Stats")
+	float WeaponDamage;
+	UPROPERTY(EditDefaultsOnly, Category="Stats")
+	TSubclassOf<class UDamageType> DamgeTypeClass;
 
 };
