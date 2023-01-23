@@ -16,13 +16,15 @@
 #include "Slayer/Interfaces/AnimInstanceInterface.h"
 #include "Slayer/Components/CombatComponent.h"
 #include "Slayer/Components/CollisionComponent.h"
+#include "Slayer/Components/StateManagerComponent.h"
 
 
 ACharacterBase::ACharacterBase()
-	:bIsTogglingCombat(false), bIsDodging(false), bIsDisabled(false), bIsDead(false), 
-	Health(100.f), ToggleCombatAction(nullptr), InteractAction(nullptr)
+	:Health(100.f), ToggleCombatAction(nullptr), InteractAction(nullptr)
 {
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("Combat Component"));
+	StateManager = CreateDefaultSubobject<UStateManagerComponent>(TEXT("State Manager"));
+
 }
 
 void ACharacterBase::BeginPlay()
@@ -30,6 +32,9 @@ void ACharacterBase::BeginPlay()
 	Super::BeginPlay();
 	
 	OnTakePointDamage.AddDynamic(this, &ACharacterBase::TakePointDamage);
+	StateManager->OnStateBegin.AddDynamic(this, &ACharacterBase::StateBegin);
+	StateManager->OnStateEnd.AddDynamic(this, &ACharacterBase::StateEnd);
+
 }
 
 void ACharacterBase::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
@@ -38,6 +43,11 @@ void ACharacterBase::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
+
+		//Jumping
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacterBase::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+
 		EnhancedInputComponent->BindAction(ToggleCombatAction, ETriggerEvent::Completed, this, &ACharacterBase::ToggleCombat);
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Completed, this, &ACharacterBase::OnInteract);
 		// Perform Attach binding is in Event graph.
@@ -46,23 +56,28 @@ void ACharacterBase::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 
 bool ACharacterBase::CanToggleCombat()
 {
-	if(CanAttack())
+	TArray<ECharacterState> StatesToCheck = {
+		ECharacterState::ECS_Attacking, ECharacterState::ECS_Dead,
+		ECharacterState::ECS_Disabled, ECharacterState::ECS_Dodging,
+		ECharacterState::ECS_General };
+
+	if (StateManager->HasAnyState(StatesToCheck) || GetCharacterMovement()->IsFalling())
 	{
-		return true;
+		return false;
 	}
 
-	return false;
+	return true;
 }
 
 void ACharacterBase::ToggleCombat()
 {
 
-	if (!CanToggleCombat())
+	if (!CanToggleCombat() || !CombatComponent->GetMainWeapon())
 	{
 		return;
 	}
 	
-	bIsTogglingCombat = true;
+	StateManager->SetState(ECharacterState::ECS_General);
 
 	UAnimMontage* MontageToPlay;
 	if (CombatComponent->IsCombatEnabled())
@@ -76,8 +91,6 @@ void ACharacterBase::ToggleCombat()
 	
 	if(MontageToPlay)
 		GetMesh()->GetAnimInstance()->Montage_Play(MontageToPlay);
-	
-	bIsTogglingCombat = false;
 }
 
 void ACharacterBase::OnInteract()
@@ -87,13 +100,26 @@ void ACharacterBase::OnInteract()
 
 bool ACharacterBase::CanAttack()
 {
-	if (CombatComponent && CombatComponent->GetMainWeapon() && !bIsTogglingCombat && 
-		!CombatComponent->IsAttacking() && !bIsDodging && !bIsDisabled && !bIsDead)
+	TArray<ECharacterState> StatesToCheck = {
+		ECharacterState::ECS_Attacking, ECharacterState::ECS_Dead,
+		ECharacterState::ECS_Disabled, ECharacterState::ECS_Dodging,
+		ECharacterState::ECS_General };
+
+	if (StateManager->HasAnyState(StatesToCheck) || GetCharacterMovement()->IsFalling())
 	{
-		return true;
+		return false;
 	}
 
-	return false;
+	return true;
+}
+
+void ACharacterBase::Jump()
+{
+	// Need to add an anim notify that resets the jump later in the attack montages.
+	if (CanJump())
+	{
+		Super::Jump();
+	}
 }
 
 void ACharacterBase::Attack(int32 AttackIndex, bool UseRandomIndex)
@@ -118,7 +144,7 @@ void ACharacterBase::Attack(int32 AttackIndex, bool UseRandomIndex)
 		}
 	}
 
-	CombatComponent->SetIsAttacking(true);
+	StateManager->SetState(ECharacterState::ECS_Attacking);
 
 	if (AttackToPlay && Weapon->IsEquipped())
 		GetMesh()->GetAnimInstance()->Montage_Play(AttackToPlay);
@@ -144,7 +170,7 @@ void ACharacterBase::OnAttack(int32 AttackIndex, bool UseRandomIndex)
 		return;
 	}
 
-	if (CombatComponent->IsAttacking())
+	if (StateManager->GetCurrentState() == ECharacterState::ECS_Attacking)
 	{
 		CombatComponent->ShouldSaveAttack(true);
 	}
@@ -194,7 +220,7 @@ void ACharacterBase::SweepForInteractable()
 
 void ACharacterBase::ContinueAttack_Implementation()
 {
-	CombatComponent->SetIsAttacking(false);
+	StateManager->ResetState();
 
 	if (CombatComponent->WasAttackSaved())
 	{
@@ -211,7 +237,6 @@ void ACharacterBase::ResetAttack_Implementation()
 	}
 
 	CombatComponent->ResetAttack();
-	bIsDisabled = false;
 }
 
 FRotator ACharacterBase::GetDesiredRotation_Implementation()
@@ -229,13 +254,12 @@ FRotator ACharacterBase::GetDesiredRotation_Implementation()
 void ACharacterBase::ResetCombat_Implementation()
 {
 	CombatComponent->ResetAttack();
-	bIsTogglingCombat = false;
-	bIsDodging = false;
+	StateManager->ResetState();
 }
 
 bool ACharacterBase::CanRecieveDamge_Implementation()
 {
-	if (!bIsDead)
+	if (StateManager->GetCurrentState() != ECharacterState::ECS_Dead)
 	{
 		return true;
 	}
@@ -264,7 +288,6 @@ void ACharacterBase::EnableRagDoll()
 
 void ACharacterBase::Death()
 {
-	bIsDead = true;
 	EnableRagDoll();
 
 	// Add logic here for destroying dead actors after some time, probably will want some magic dissolve FX.
@@ -279,13 +302,17 @@ void ACharacterBase::ApplyHitReactionVelocity(float InitSpeed)
 
 bool ACharacterBase::CanDodge()
 {
-	if (CombatComponent && !bIsTogglingCombat && !CombatComponent->IsAttacking() && !bIsDodging
-		&& !bIsDisabled && !bIsDead)
+	TArray<ECharacterState> StatesToCheck = {
+	ECharacterState::ECS_Attacking, ECharacterState::ECS_Dead,
+	ECharacterState::ECS_Disabled, ECharacterState::ECS_Dodging,
+	ECharacterState::ECS_General };
+
+	if (StateManager->HasAnyState(StatesToCheck) || GetCharacterMovement()->IsFalling())
 	{
-		return true;
+		return false;
 	}
 
-	return false;
+	return true;
 }
 
 void ACharacterBase::TakePointDamage(AActor* DamagedActor, float Damage, class AController* InstigatedBy, FVector HitLocation, class UPrimitiveComponent* FHitComponent, FName BoneName, FVector ShotFromDirection, const class UDamageType* DamageType, AActor* DamageCauser)
@@ -296,10 +323,17 @@ void ACharacterBase::TakePointDamage(AActor* DamagedActor, float Damage, class A
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), BloodVFX, HitLocation);
 	if(HitSound)
 		UGameplayStatics::PlaySoundAtLocation(GetWorld(), (USoundBase*)HitSound, HitLocation, HitLocation.Rotation());
-	if(HitMontage)
-		GetMesh()->GetAnimInstance()->Montage_Play(HitMontage);
+	if (HitMontage)
+	{
+		if (CanRecieveHitReations())
+		{
+			StateManager->SetState(ECharacterState::ECS_Disabled);
+			GetMesh()->GetAnimInstance()->Montage_Play(HitMontage);
+		}
+			
+	}
 
-	bIsDisabled = true;
+
 }
 
 void ACharacterBase::Dodge(int32 MontageIndex, bool bUseRandom)
@@ -329,7 +363,7 @@ void ACharacterBase::OnDodge(int32 MontageIndex, bool bUseRandom)
 		return;
 	}
 
-	bIsDodging = true;
+	StateManager->SetState(ECharacterState::ECS_Dodging);
 	PerformDodge(MontageIndex, bUseRandom);
 }
 
@@ -339,6 +373,84 @@ void ACharacterBase::TakeDamgae(float Damage)
 
 	if (Health <= 0)
 	{
-		Death();
+		StateManager->SetState(ECharacterState::ECS_Dead);
 	}
+}
+
+bool ACharacterBase::CanRecieveHitReations() const
+{
+	TArray<ECharacterState> StatesToCheck = { ECharacterState::ECS_Dead };
+
+	if (StateManager->HasAnyState(StatesToCheck))
+	{
+		return false;
+	}
+
+	return true;
+}
+
+bool ACharacterBase::CanJump() const
+{
+	TArray<ECharacterState> StatesToCheck = {
+		ECharacterState::ECS_Attacking, ECharacterState::ECS_Dead,
+		ECharacterState::ECS_Disabled, ECharacterState::ECS_Dodging,
+		ECharacterState::ECS_General };
+
+	if (StateManager->HasAnyState(StatesToCheck) || GetCharacterMovement()->IsFalling())
+	{
+		return false;
+	}
+
+	return true;
+}
+
+void ACharacterBase::StateBegin(ECharacterState CharState)
+{
+	switch (CharState)
+	{
+	case ECharacterState::ECS_None:
+		break;
+
+	case ECharacterState::ECS_Attacking:
+		break;
+
+	case ECharacterState::ECS_Dodging:
+		break;
+
+	case ECharacterState::ECS_Dead:
+		Death();
+		break;
+
+	case ECharacterState::ECS_Disabled:
+		break;
+
+	case ECharacterState::ECS_General:
+		break;
+
+	};
+}
+
+void ACharacterBase::StateEnd(ECharacterState CharState)
+{
+	switch (CharState)
+	{
+	case ECharacterState::ECS_None:
+		break;
+
+	case ECharacterState::ECS_Attacking:
+		break;
+
+	case ECharacterState::ECS_Dodging:
+		break;
+
+	case ECharacterState::ECS_Dead:
+		break;
+
+	case ECharacterState::ECS_Disabled:
+		break;
+
+	case ECharacterState::ECS_General:
+		break;
+
+	};
 }

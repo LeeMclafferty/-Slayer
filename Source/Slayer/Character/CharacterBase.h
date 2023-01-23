@@ -20,6 +20,8 @@ public:
 	/*-- Getters --*/
 	UFUNCTION(BlueprintPure, Category="Getter")
 	class UCombatComponent* GetCombatComponent() { return CombatComponent; }
+	UFUNCTION(BlueprintPure, Category = "Getter")
+	class UStateManagerComponent* GetStateManager() { return StateManager; }
 
 	/*-- Setters --*/
 
@@ -40,17 +42,6 @@ public:
 	bool CanRecieveDamge();
 	bool CanRecieveDamge_Implementation();
 
-	/* -- Combat -- */
-	UPROPERTY(BlueprintReadWrite, Category="Combat")
-	bool bIsTogglingCombat;
-	UPROPERTY(BlueprintReadWrite, Category = "Movement")
-	bool bIsDodging;
-	UPROPERTY(BlueprintReadWrite, Category = "Movement")
-	bool bIsDisabled;
-
-	UPROPERTY(BlueprintReadWrite, Category = "Movement")
-	bool bIsDead;
-
 	float Health;
 	
 protected:
@@ -67,6 +58,7 @@ protected:
 	void PerformAttack(int32 AttackIndex, bool UseRandomIndex);
 	UFUNCTION(BlueprintImplementableEvent, Category = "Input|Interact")
 	void PerformDodge(int32 MontageIndex, bool bUseRandom);
+	virtual void Jump() override;
 
 
 	/*-- Combat --*/
@@ -80,6 +72,9 @@ protected:
 	void OnDodge(int32 MontageIndex, bool bUseRandom);
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void TakeDamgae(float Damage);
+	bool CanRecieveHitReations() const;
+
+	bool CanJump() const;
 
 	/*-- VFX --*/
 		//Might move blood and hit FX to combat component
@@ -89,7 +84,6 @@ protected:
 	/*-- SFX --*/
 	UPROPERTY(EditDefaultsOnly, Category="FX|Sound")
 	class USoundCue* HitSound;
-
 
 	UFUNCTION(BlueprintCallable, Category = "Death")
 	void EnableRagDoll();
@@ -110,9 +104,7 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* DodgeAction;
 
-
 	void SweepForInteractable();
-	
 
 	/*-- Combat --*/
 	UPROPERTY(VisibleAnywhere)
@@ -129,5 +121,13 @@ private:
 	void TakePointDamage(AActor* DamagedActor, float Damage, class AController* InstigatedBy, 
 		FVector HitLocation, class UPrimitiveComponent* FHitComponent, FName BoneName, 
 		FVector ShotFromDirection, const class UDamageType* DamageType, AActor* DamageCauser);
+
+	/*-- State Manager --*/
+	UPROPERTY(VisibleAnywhere)
+	class UStateManagerComponent* StateManager;
+	UFUNCTION()
+	void StateBegin(ECharacterState CharState);
+	UFUNCTION()
+	void StateEnd(ECharacterState CharState);
 
 };
